@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Andorra V1.0</title>
+    <meta name="description" content="Advanced Scenario Modeling & Impact Assessment">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: hsl(0, 0%, 7%);
+            --foreground: hsl(0, 0%, 90%);
+            --card: hsl(0, 0%, 10%);
+            --card-foreground: hsl(0, 0%, 90%);
+            --primary: hsl(0, 0%, 70%);
+            --primary-foreground: hsl(0, 0%, 10%);
+            --secondary: hsl(0, 0%, 15%);
+            --secondary-foreground: hsl(0, 0%, 90%);
+            --muted: hsl(0, 0%, 12%);
+            --muted-foreground: hsl(0, 0%, 55%);
+            --accent: hsl(0, 0%, 20%);
+            --destructive: hsl(0, 84.2%, 60.2%);
+            --border: hsl(0, 0%, 20%);
+            --panel-border: hsl(0, 0%, 20%);
+            --gradient-panel: linear-gradient(145deg, hsl(0, 0%, 10%), hsl(0, 0%, 8%));
+            --shadow-panel: 0 4px 20px hsl(0, 0%, 0%, 0.5);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background: var(--background);
+            color: var(--foreground);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 100vw;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Header */
+        .header {
+            border-bottom: 1px solid var(--panel-border);
+            background: var(--gradient-panel);
+            padding: 1rem 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .header p {
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+        }
+
+        /* Scenario Slider */
+        .scenario-slider {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .scenario-info {
+            text-align: right;
+        }
+
+        .scenario-info .label {
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .scenario-info .name {
+            font-size: 0.875rem;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .scenario-info .description {
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+
+        .slider-container {
+            width: 16rem;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--secondary);
+            outline: none;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .slider:hover {
+            opacity: 1;
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            border: none;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+
+        .slider-labels span {
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .slider-labels span:hover {
+            color: var(--foreground);
+        }
+
+        .slider-labels span.active {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* Main Dashboard */
+        .dashboard {
+            padding: 1rem 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: var(--transition-smooth);
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            color: var(--muted-foreground);
+        }
+
+        .tab-button:hover {
+            color: var(--foreground);
+            background: hsl(0, 0%, 15%, 0.5);
+        }
+
+        .tab-button.active {
+            background: var(--secondary);
+            color: var(--foreground);
+            box-shadow: var(--shadow-panel);
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            align-items: stretch;
+            height: auto;
+        }
+
+        .scenario-image {
+            grid-column: 1;
+            grid-row: 1 / 3;
+            background: var(--gradient-panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: var(--shadow-panel);
+            min-height: 600px;
+        }
+
+        .scenario-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            background: var(--gradient-panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-panel);
+            transition: var(--transition-smooth);
+        }
+
+        .kpi-card:hover {
+            transform: scale(1.02);
+            border-color: hsl(0, 0%, 70%, 0.5);
+        }
+
+        .kpi-card .title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--muted-foreground);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-card .value-container {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .kpi-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .kpi-card .unit {
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+        }
+
+        .kpi-card .chart {
+            height: 200px;
+            margin-bottom: 1rem;
+        }
+        
+        .kpi-card .chart.radar {
+            height: 300px;
+        }
+
+        .kpi-card .trend {
+            display: flex;
+            align-items: center;
+            font-size: 0.75rem;
+            gap: 0.25rem;
+        }
+
+        .trend.up {
+            color: var(--primary);
+        }
+
+        .trend.down {
+            color: var(--destructive);
+        }
+
+        .trend.stable {
+            color: var(--muted-foreground);
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--panel-border);
+            background: var(--gradient-panel);
+            margin-top: 3rem;
+            padding: 1rem 0;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .scenario-slider {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .slider-container {
+                width: 100%;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .scenario-image {
+                grid-row: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="header-content">
+                <div>
+                    <h1>ANDORRA V1.0</h1>
+                    <p>Advanced Scenario Modeling & Impact Assessment</p>
+                </div>
+                <div class="scenario-slider">
+                    <div class="scenario-info">
+                        <p class="label">Scenario</p>
+                        <p class="name" id="scenario-name">Current</p>
+                        <p class="description" id="scenario-description">Present-day balanced development</p>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="3" value="0" class="slider" id="scenario-slider">
+                        <div class="slider-labels">
+                            <span class="active" data-scenario="0">Current</span>
+                            <span data-scenario="1">Overgrowth</span>
+                            <span data-scenario="2">Degrowth</span>
+                            <span data-scenario="3">Continuity</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard">
+        <div class="container">
+            <!-- Tab Navigation -->
+            <div class="tab-nav">
+                <button class="tab-button active" data-tab="economic">ECONOMIC MATRIX</button>
+                <button class="tab-button" data-tab="social">SOCIAL SYSTEMS</button>
+                <button class="tab-button" data-tab="environmental">ENVIRONMENTAL GRID</button>
+            </div>
+
+            <!-- KPI Grid -->
+            <div class="kpi-grid" id="kpi-grid">
+                <!-- Content will be dynamically generated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>© 2024 Analytics Division</p>
+                <p id="last-update">Data refresh: Live • Last update: <span id="current-time"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data and configuration
+        const scenarios = [
+    // Data and configuration
+
+    { id: "current", name: "Current", description: "Present-day balanced development", image: "./Public/Andorra1.mp4" },
+    { id: "overgrowth", name: "Overgrowth",   description: "Rapid urban expansion",       image: "./Public/overgrowth.png" },
+    { id: "degrowth",   name: "Degrowth",     description: "Sustainable rural communities",  image: "./Public/degrowth.png" },
+    { id: "continuity", name: "Continuity",   description: "Steady green progression",       image: "./Public/continuity.png" }
+];
+
+// KPI values for the Current scenario (static numbers from JSON)
+const kpiData = {
+    economic: [
+        { title: "GDP per Capita",         value: "42,852.96",         unit: "$",  trend: "up", trendValue: "+2.5%", chartType: "area", maxValue: 80000, color: "#00C49F", secondaryColor: "#82CA9D" , series: [34367.24,34897.13,35054.21,35795.94,35507.64,32775.49,34346.57,35443.59,36342.49,39347.8,41134.37,42852.96]},
+        { title: "Income spent on Housing",value: "14.4",              unit: "%",  trend: "down",trendValue: "-.5%", chartType: "bar",  maxValue: 100,   color: "#FF8042", secondaryColor: "#FFBB28",  series: [15.6,16.23,15.49,15.5,15.7,16.05,16.24,17.0,15.29,15.6,14.39] },
+        { title: "Tourist Arrivals",       value: "9,646,656",         unit: "",    trend: "up", trendValue: "+7.5%",chartType: "line", maxValue: 15,     color: "#8884D8", secondaryColor: "#82CA9D", series: [7796770.0,7850411.0,8025265.0,8152148.0,8328254.0,5206632.0,5422415.0,8234993.0,8426708.0,9367696.0,9646656.0]},
+        { title: "Monthly Salary",         value: "2,571",             unit: "$",  trend: "up", trendValue: "+2.8%", chartType: "line", maxValue: 8000,   color: "#0088FE", secondaryColor: "#00C49F", series: [2073.0,2071.0,2127.0,2143.0,2162.0,2193.0,2303.0,2440.0,2571.0, 2604.0] },
+        { title: "Employment Rate",        value: "98.52",             unit: "%",  trend: "up", trendValue: "+0.7%", chartType: "pentagon",maxValue: 100,  color: "#00C49F", secondaryColor: "#8DD1E1"},
+        { title: "Business Formation",     value: "1,450",             unit: "/year",trend: "up", trendValue: "+3.3%", chartType: "bar",  maxValue: 5000,  color: "#FFBB28", secondaryColor: "#FF8042", series: [840.0,886.0,778.0,801.0,682.0,641.0,1306.0,1349.0,1245.0,1450.0,1452,] },
+        { title: "Buildings Count",        value: "10,645",            unit: "",    trend: "up", trendValue: "+3.2%", chartType: "area", maxValue: 200,   color: "#8884D8", secondaryColor: "#82CA9D", series: [9861.33333333333,9949.83333333333,10038.3333333333,10126.8333333333,10215.3333333333,10303.8333333333,10392.3333333333,10468.0,10595.0,10645.0,] }
+    ],
+    social: [
+        { title: "Population Growth",   value: "87,097",         unit: "People",    trend: "up",   trendValue: "+0.02%", chartType: "area",    maxValue: 5,   color: "#0088FE", secondaryColor: "#82CA9D", series: [70570.0,71732.0,73105.0,74794.0,76177.0,77543.0,78015.0,79535.0,81588.0,85101.0,87097.0]}, // 2015-2024 
+        { title: "Life Expectancy",     value: "84.5",           unit: "Years",trend: "stable",   trendValue: "+0.3%", chartType: "bar",     maxValue: 100, color: "#00C49F", secondaryColor: "#8DD1E1", series: [83.1,83.2,83.4,83.6,83.3,84.1,82.5,83.7,83.5,84.6,84.5]},
+        { title: "Family Stability",    value: "30.96",          unit: "%",    trend: "stable",trendValue: "±0.3%",chartType: "line",    maxValue: 100, color: "#00C49F", secondaryColor: "#8884D8", series: [37.27, 43.86, 45.76, 20.00, 52.56, 41.85, 42.04, 40.56, 38.37, 30.34,] },
+        { title: "Access to Health",    value: "92.2",           unit: "%",    trend: "up",   trendValue: "+0.5%", chartType: "bar",     maxValue: 100, color: "#8884D8", secondaryColor: "#82CA9D", series: [92.00, 90.80, 89.50, 90.10, 91.40, 93.20, 93.50, 93.60, 92.80, 92.20]  },
+        { title: "Lisure Time",         value: "62.5",           unit: "%",  trend: "down",   trendValue: "+0.4%", chartType: "pentagon",maxValue: 10,  color: "#0088FE", secondaryColor: "#00C49F", series: [6.357,6.346,6.336,6.325,6.314,6.304,6.293,6.282,6.271,6.261,6.25] },
+        { title: "Life Satisfaction",   value: "7.8",            unit: "/10",  trend: "up",   trendValue: "+0.2%", chartType: "pentagon",maxValue: 10,  color: "#8884D8", secondaryColor: "#82CA9D" },
+        { title: "Civic Trust",         value: "68",             unit: "%",    trend: "down", trendValue: "-2.1%",chartType: "radial",  maxValue: 100, color: "#FF8042", secondaryColor: "#FFBB28" },
+        { title: "Foreign-born",        value: "47,627",         unit: "People",    trend: "stable",trendValue: "±0.1%",chartType: "pie",     maxValue: 100, color: "#FFBB28", secondaryColor: "#FF8042" },
+       
+    ],
+    
+    environmental: [
+        { title: "Forest Coverage",    value: "98,07",           unit: "%",    trend: "down", trendValue: "-0.7%",chartType: "pie",    maxValue: 100, color: "#00C49F", secondaryColor: "#8DD1E1", series: [98.302,98.276,98.25,98.224,98.199,98.173,98.147,98.122,98.096,98.07] },
+        { title: "CO₂ Emissions",      value: "470",              unit: "t/capita",trend: "down", trendValue: "-2.2%",chartType: "area",  maxValue: 25,  color: "#FF8042", secondaryColor: "#FFBB28", series: [460.0,470.0,470.0,470.0,460.0,441.0,448.0,471.0,480.0,465.0,470.0] },
+        { title: "Renewable Energy",   value: "25.1",             unit: "%",    trend: "up",   trendValue: "+2.8%",chartType: "bar",    maxValue: 100, color: "#00C49F", secondaryColor: "#82CA9D" },
+        { title: "Air Quality Index",  value: "6015",             unit: "AQI",  trend: "up",   trendValue: "+3.1%",chartType: "line",   maxValue: 100, color: "#0088FE", secondaryColor: "#8DD1E1" },
+        { title: "Biodiversity Index",value: "8.7",              unit: "/10",   trend: "down", trendValue: "-0.4%",chartType: "pentagon",maxValue: 10, color: "#8884D8", secondaryColor: "#82CA9D" },
+        { title: "Water Consumption", value: "53,655",            unit: "L/day", trend: "down", trendValue: "-2.3%",chartType: "area",    maxValue: 300, color: "#0088FE", secondaryColor: "#00C49F", series: [59860.0,58765.0,58400.0,56940.0,56502.00000000001,55808.5,55115.0,54421.5,53655.0] }, 
+        { title: "Avg Temperature",   value: "7.46",             unit: "°C",   trend: "up",   trendValue: "+0.3%",chartType: "area",    maxValue: 30,  color: "#FF8042", secondaryColor: "#FFBB28", series: [7.3,7.35,7.36,7.38,7.4,7.42,7.43,7.44,7.45,7.46,7.46]  },
+    ]
+};
+
+
+        // State
+        let activeScenario = 0;
+        let activeTab = 'economic';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            setInterval(updateTime, 1000);
+            renderKPIs();
+            setupEventListeners();
+        });
+
+        function updateTime() {
+            document.getElementById('current-time').textContent = new Date().toLocaleTimeString();
+        }
+
+        function setupEventListeners() {
+            // Scenario slider
+            const slider = document.getElementById('scenario-slider');
+            slider.addEventListener('input', function() {
+                updateScenario(parseInt(this.value));
+            });
+
+            // Scenario labels
+            document.querySelectorAll('[data-scenario]').forEach(label => {
+                label.addEventListener('click', function() {
+                    const scenarioIndex = parseInt(this.dataset.scenario);
+                    updateScenario(scenarioIndex);
+                    slider.value = scenarioIndex;
+                });
+            });
+
+            // Tab buttons
+            document.querySelectorAll('[data-tab]').forEach(button => {
+                button.addEventListener('click', function() {
+                    updateTab(this.dataset.tab);
+                });
+            });
+        }
+
+        function updateScenario(index) {
+            activeScenario = index;
+            const scenario = scenarios[index];
+            
+            // Update scenario info
+            document.getElementById('scenario-name').textContent = scenario.name;
+            document.getElementById('scenario-description').textContent = scenario.description;
+            
+            // Update slider labels
+            document.querySelectorAll('[data-scenario]').forEach((label, i) => {
+                label.classList.toggle('active', i === index);
+            });
+            
+            renderKPIs();
+        }
+
+        function updateTab(tab) {
+            activeTab = tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('[data-tab]').forEach(button => {
+                button.classList.toggle('active', button.dataset.tab === tab);
+            });
+            
+            renderKPIs();
+        }
+
+        function renderKPIs() {
+            const grid = document.getElementById('kpi-grid');
+            const currentScenario = scenarios[activeScenario];
+            const kpis = kpiData[activeTab];
+            
+            let html = '';
+            
+            // Add scenario image
+            if (currentScenario.image) {
+    const isVideo = currentScenario.image.endsWith('.mp4') || currentScenario.image.endsWith('.webm') || currentScenario.image.endsWith('.mov');
+    html += `
+        <div class="scenario-image">
+            ${isVideo
+                ? `<video src="${currentScenario.image}" autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"></video>`
+                : `<img src="${currentScenario.image}" alt="${currentScenario.name} scenario"
+                    onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted-foreground);font-size:0.875rem;\\'>Image not available</div>'">`
+            }
+        </div>
+    `;
+}
+            
+            // Add KPI cards
+            kpis.forEach((kpi, index) => {
+                const trendIcon = kpi.trend === 'up' ? '↗' : kpi.trend === 'down' ? '↘' : '→';
+                html += `
+                    <div class="kpi-card">
+                        <div class="title">${kpi.title}</div>
+                        <div class="value-container">
+                            <div class="value">${kpi.value}</div>
+                            ${kpi.unit ? `<div class="unit">${kpi.unit}</div>` : ''}
+                        </div>
+                        <div class="chart ${kpi.chartType === 'pentagon' ? 'radar' : ''}">
+    <canvas id="chart-${activeTab}-${index}" 
+            width="${kpi.chartType === 'pentagon' ? '1000' : '500'}" 
+            height="${kpi.chartType === 'pentagon' ? '600' : '300'}"></canvas>
+</div>
+                        <div class="trend ${kpi.trend}">
+                            <span>${trendIcon}</span>
+                            <span>${kpi.trendValue}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+            
+            // Render charts
+            setTimeout(() => {
+                kpis.forEach((kpi, index) => {
+                    renderChart(`chart-${activeTab}-${index}`, kpi);
+                });
+            }, 100);
+        }
+
+       function generateTrendData(baseValue, trend, points = 10, kpi = {}) {
+    // Use provided series if available
+    if (kpi.series && Array.isArray(kpi.series)) {
+        return kpi.series.map((value, i) => ({
+            year: (2015 + i).toString(),
+            value: value,
+            target: value * 1.05,
+            secondary: value * 0.95
+        }));
+    }
+    const data = [];
+    const numericValue = parseFloat(baseValue.toString().replace(/[^\d.-]/g, ''));
+    for (let i = 0; i < points; i++) {
+        let value = numericValue;
+        let target = numericValue * 1.1;
+        let secondary = numericValue * 0.8;
+        if (trend === 'up') {
+            value = numericValue * (0.6 + (i * 0.04)) + (Math.random() - 0.5) * (numericValue * 0.08);
+            target = value * 1.15;
+            secondary = value * 0.9;
+        } else if (trend === 'down') {
+            value = numericValue * (1.4 - (i * 0.04)) + (Math.random() - 0.5) * (numericValue * 0.08);
+            target = value * 0.85;
+            secondary = value * 1.1;
+        } else {
+            value = numericValue + (Math.random() - 0.5) * (numericValue * 0.05);
+            target = value * 1.05;
+            secondary = value * 0.95;
+        }
+        data.push({
+            year: (2015 + i).toString(),
+            value: Math.max(0, value),
+            target: Math.max(0, target),
+            secondary: Math.max(0, secondary)
+        });
+    }
+    return data;
+}
+
+// Update renderChart to pass kpi as argument to generateTrendData
+function renderChart(canvasId, kpi) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const data = generateTrendData(kpi.value, kpi.trend, 10, kpi); // Pass kpi as 4th argument
+    
+    // Apply dark theme defaults
+    Chart.defaults.color = '#888';
+    Chart.defaults.borderColor = '#333';
+    Chart.defaults.backgroundColor = '#1a1a1a';
+    
+    let chartConfig = {
+        type: getChartType(kpi.chartType),
+        data: getChartData(data, kpi),
+        options: getChartOptions(kpi.chartType, kpi)
+    };
+    
+    new Chart(ctx, chartConfig);
+}
+        
+        function getChartType(chartType) {
+            const typeMapping = {
+                'area': 'line',
+                'bar': 'bar',
+                'pie': 'pie',
+                'radial': 'doughnut',
+                'line': 'line',
+                'pentagon': 'radar'
+            };
+            return typeMapping[chartType] || 'line';
+        }
+        
+        function getChartData(data, kpi) {
+            const years = data.map(d => d.year);
+            const values = data.map(d => d.value);
+            const targets = data.map(d => d.target);
+            const secondaries = data.map(d => d.secondary);
+            
+            switch(kpi.chartType) {
+                case 'pie':
+                    return {
+                        labels: years,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: [
+                                kpi.color,
+                                kpi.secondaryColor,
+                                kpi.color + '80',
+                                kpi.secondaryColor + '80',
+                                kpi.color + '40'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#1a1a1a'
+                        }]
+                    };
+                    
+                case 'radial':
+                    // Show current value as percentage of max
+                    const currentValue = values[values.length - 1];
+                    const percentage = Math.min(100, (currentValue / kpi.maxValue) * 100);
+                    return {
+                        labels: [kpi.title],
+                        datasets: [{
+                            data: [percentage, 100 - percentage],
+                            backgroundColor: [kpi.color, '#333'],
+                            borderWidth: 0,
+                            cutout: '60%'
+                        }]
+                    };
+                    
+                case 'pentagon':
+                    // Pentagon/radar chart with 5 data points (last 5 years)
+                    const last5Years = years.slice(-5);
+                    const last5Values = values.slice(-5);
+                    const last5Targets = targets.slice(-5);
+                    return {
+                        labels: last5Years,
+                        datasets: [{
+                            label: 'Actual',
+                            data: last5Values,
+                            borderColor: kpi.color,
+                            backgroundColor: kpi.color + '20',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: kpi.color,
+                            pointBorderColor: '#1a1a1a',
+                            pointBorderWidth: 2
+                        }, {
+                            label: 'Target',
+                            data: last5Targets,
+                            borderColor: kpi.secondaryColor,
+                            backgroundColor: kpi.secondaryColor + '10',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 4,
+                            pointBackgroundColor: kpi.secondaryColor,
+                            pointBorderColor: '#1a1a1a',
+                            pointBorderWidth: 2
+                        }]
+                    };
+                    
+                case 'bar':
+                    return {
+                        labels: years,
+                        datasets: [{
+                            label: 'Value',
+                            data: values,
+                            backgroundColor: kpi.color + '80',
+                            borderColor: kpi.color,
+                            borderWidth: 2,
+                            borderRadius: 4,
+                            borderSkipped: false
+                        }]
+                    };
+                    
+                case 'area':
+                    return {
+                        labels: years,
+                        datasets: [{
+                            label: 'Value',
+                            data: values,
+                            borderColor: kpi.color,
+                            backgroundColor: kpi.color + '20',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: kpi.color,
+                            pointBorderColor: '#1a1a1a',
+                            pointBorderWidth: 2
+                        }]
+                    };
+                    
+                default: // line
+                    return {
+                        labels: years,
+                        datasets: [{
+                            label: 'Actual',
+                            data: values,
+                            borderColor: kpi.color,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: kpi.color,
+                            pointBorderColor: '#1a1a1a',
+                            pointBorderWidth: 2
+                        }, {
+                            label: 'Target',
+                            data: targets,
+                            borderColor: kpi.secondaryColor,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: kpi.secondaryColor,
+                            pointBorderColor: '#1a1a1a',
+                            pointBorderWidth: 2
+                        }]
+                    };
+            }
+        }
+        
+        function getChartOptions(chartType, kpi) {
+            const baseOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: chartType === 'pie' || chartType === 'line',
+                        position: 'bottom',
+                        labels: {
+                            color: '#888',
+                            font: { size: 10 },
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1a1a1a',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#333',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        displayColors: true
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            };
+            
+            if (chartType === 'pie') {
+                return {
+                    ...baseOptions,
+                    plugins: {
+                        ...baseOptions.plugins,
+                        legend: {
+                            ...baseOptions.plugins.legend,
+                            display: true,
+                            position: 'right'
+                        }
+                    }
+                };
+            }
+            
+            if (chartType === 'radial') {
+                return {
+                    ...baseOptions,
+                    plugins: {
+                        ...baseOptions.plugins,
+                        legend: {
+                            display: false
+                        }
+                    },
+                    cutout: '60%'
+                };
+            }
+            
+            if (chartType === 'pentagon') {
+                return {
+                    ...baseOptions,
+                    plugins: {
+                        ...baseOptions.plugins,
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                color: '#888',
+                                font: { 
+                                    size: 12,
+                                    weight: '500'
+                                },
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: '#444',
+                                lineWidth: 1
+                            },
+                            grid: {
+                                color: '#444',
+                                lineWidth: 1
+                            },
+                            pointLabels: {
+                                color: '#ccc',
+                                font: { 
+                                    size: 16,
+                                    weight: '600'
+                                },
+                                padding: 25
+                            },
+                            ticks: {
+                                color: '#888',
+                                font: { size: 11 },
+                                display: true,
+                                stepSize: kpi.maxValue / 5,
+                                backdropColor: 'transparent'
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: kpi.maxValue,
+                            beginAtZero: true
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            top: 30,
+                            bottom: 20,
+                            left: 30,
+                            right: 30
+                        }
+                    }
+                };
+            }
+            
+            return {
+                ...baseOptions,
+                scales: {
+                    x: {
+                        display: true,
+                        grid: {
+                            display: true,
+                            color: '#333',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#888',
+                            font: { size: 10 }
+                        }
+                    },
+                    y: {
+                        display: true,
+                        grid: {
+                            display: true,
+                            color: '#333',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#888',
+                            font: { size: 10 }
+                        }
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>
