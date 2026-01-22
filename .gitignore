@@ -39,3 +39,11 @@ build/
 .env
 .env.local
 
+# Large media files
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wmv
+*.flv
+
