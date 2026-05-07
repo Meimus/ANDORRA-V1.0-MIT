@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import { BUS_FREQUENCIES } from '../../../model/bus_frequencies.js';
 import { addAndorraBoundary } from '../utils/andorraBoundary';
+import MapMask from './MapMask';
 
 // ── Accessibility colour map ──────────────────────────────────────────────────
 const ACC_COLORS = { walk: '#4ade80', bike: '#fbbf24', 'bus/car': '#f87171', default: '#374151' };
@@ -479,6 +480,7 @@ export default function AccessibilityMapView() {
           </div>
         : <div ref={mapRef} style={{ position: 'absolute', inset: 0, background: '#0d0d0d' }} />
       }
+      <MapMask mapInstance={mapInstanceRef} />
 
       {/* Legend — overlay at bottom */}
       <div className="acc-map-legend" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 36, zIndex: 1000, flexWrap: 'nowrap', overflow: 'hidden', background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}>

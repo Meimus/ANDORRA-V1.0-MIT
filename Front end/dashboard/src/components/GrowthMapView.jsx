@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import { addAndorraBoundary } from '../utils/andorraBoundary';
 import { OVERLAY_SCENARIOS } from '../utils/chartUtils';
+import MapMask from './MapMask';
 
 const PROJECTION_BOUNDS = [[42.394176, 1.393847], [42.697242, 1.803713]];
 const PROJECTION_CORNERS = [
@@ -269,6 +270,7 @@ export default function GrowthMapView({ overlayEnabled = {}, selectedYear = 2049
 
       {/* Map — full coverage */}
       <div ref={mapRef} style={{ position: 'absolute', inset: 0, background: '#0d0d0d' }} />
+      <MapMask mapInstance={instanceRef} />
 
       {/* Legend — overlay at bottom */}
       <div className="acc-map-legend" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 36, zIndex: 1000, flexWrap: 'nowrap', overflow: 'hidden', background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}>

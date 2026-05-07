@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { addAndorraBoundary } from '../utils/andorraBoundary';
+import MapMask from './MapMask';
 
 const PROJECTION_BOUNDS = [[42.394176, 1.393847], [42.697242, 1.803713]];
 
@@ -716,6 +717,8 @@ export default function TourismMapView() {
             pointerEvents: 'none',
           }}
         />
+
+        <MapMask mapInstance={instanceRef} />
 
         {/* Season badge — bottom-left of map */}
         {snowActive && (

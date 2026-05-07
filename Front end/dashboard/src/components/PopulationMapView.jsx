@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { addAndorraBoundary } from '../utils/andorraBoundary';
+import MapMask from './MapMask';
 
 // 10-stop color ramp — more stops = smoother perceived gradient between adjacent hexagons
 function popColor(pop, maxPop) {
@@ -155,6 +156,7 @@ export default function PopulationMapView({ onBandStats }) {
           </div>
         : <div ref={mapRef} style={{ position: 'absolute', inset: 0, background: '#0d0d0d' }} />
       }
+      <MapMask mapInstance={mapInstanceRef} />
     </div>
   );
 }

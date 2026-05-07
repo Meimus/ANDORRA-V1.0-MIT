@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { addAndorraBoundary } from '../utils/andorraBoundary';
+import MapMask from './MapMask';
 
 const PROJECTION_BOUNDS = [[42.394176, 1.393847], [42.697242, 1.803713]];
-// Physical projector keystone corners — 120×120 cm terrain table
 const PROJECTION_CORNERS = [
   [42.694543, 1.393847],  // NW
   [42.697242, 1.801074],  // NE
@@ -36,16 +36,11 @@ export default function BaseMapView() {
     map.fitBounds(PROJECTION_BOUNDS, { padding: [0, 0] });
     map.on('resize', () => { map.invalidateSize(); map.fitBounds(PROJECTION_BOUNDS, { padding: [0, 0] }); });
 
-    // Esri World Imagery (free, no API key)
     L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      {
-        attribution: 'Tiles © Esri — Source: Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
-        maxZoom: 18,
-      }
+      { maxZoom: 18 }
     ).addTo(map);
 
-    // Esri World Boundaries and Places label overlay
     L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
       { maxZoom: 18, opacity: 0.7 }
@@ -64,12 +59,10 @@ export default function BaseMapView() {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {/* Map — full coverage */}
       <div ref={mapRef} style={{ position: 'absolute', inset: 0 }} />
-
-      {/* Label overlay — bottom-left */}
+      <MapMask mapInstance={instanceRef} />
       <div style={{
-        position: 'absolute', bottom: 8, left: 10, zIndex: 10,
+        position: 'absolute', bottom: 8, left: 10, zIndex: 600,
         background: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: '3px 8px',
         fontSize: '0.68rem', color: 'rgba(200,200,200,0.8)', letterSpacing: '.08em', pointerEvents: 'none',
       }}>
