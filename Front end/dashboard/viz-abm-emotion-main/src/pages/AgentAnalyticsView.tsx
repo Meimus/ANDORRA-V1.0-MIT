@@ -643,7 +643,7 @@ function VisualizationLeft() {
 
   const videoPath = useMemo(() => {
     const agentId = state.followedAgent?.agentId || 'Carlos';
-    return `/faces/${agentId}/${currentEmotion}.mp4`;
+    return `/andorra/faces/${agentId}/${currentEmotion}.mp4`;
   }, [currentEmotion, state.followedAgent]);
 
   const agentDetails = useMemo(() => {
