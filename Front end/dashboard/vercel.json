@@ -1,0 +1,8 @@
+{
+  "buildCommand": "mkdir -p public/andorra && cp -r viz-abm-emotion-main/dist/. public/andorra/ && npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/andorra/:path*", "destination": "/andorra/index.html" },
+    { "source": "/:path*",         "destination": "/index.html" }
+  ]
+}
