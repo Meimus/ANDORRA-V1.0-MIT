@@ -259,13 +259,16 @@ export function SharedStateProvider({ children }: { children: ReactNode }) {
   const loadSimulationData = async () => {
     try {
 
-      const agents_files = import.meta.glob('../simulation_output/**/*.json'); // dynamically import all JSON files
-      console.log("Loading simulation data...", agents_files);
-      const allAgentData = [];
+      const agents_files = import.meta.glob('../simulation_output/**/*.json');
+      const paths = Object.keys(agents_files);
 
-      for (const path in agents_files) {
-        const agent_data = await agents_files[path](); // load each JSON asynchronously
-        allAgentData.push((agent_data as any).default);
+      // Load in parallel batches of 50 to avoid overwhelming the browser
+      const BATCH = 50;
+      const allAgentData: any[] = [];
+      for (let i = 0; i < paths.length; i += BATCH) {
+        const batch = paths.slice(i, i + BATCH);
+        const results = await Promise.all(batch.map(p => agents_files[p]()));
+        results.forEach(r => allAgentData.push((r as any).default));
       }
 
       console.log(`Successfully loaded ${allAgentData.length} agent files`);
