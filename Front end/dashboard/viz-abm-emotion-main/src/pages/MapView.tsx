@@ -66,10 +66,19 @@ const KEYSTONE_DOTS = [
   { position: [1.803713, 42.396861] as [number, number] },  // SE
 ];
 
+// NW → NE → SE → SW (clockwise)
+const MASK_CORNERS: [number, number][] = [
+  [1.393847, 42.694543],
+  [1.801074, 42.697242],
+  [1.803713, 42.396861],
+  [1.39849,  42.394176],
+];
+
 function MapView() {
   const { state, loadSimulationData, setFollowedAgent } = useSharedState();
   const [time, setTime] = useState(0);
   const [viewState, setViewState] = useState<MapViewState>(FALLBACK_VIEW_STATE);
+  const [maskPoints, setMaskPoints] = useState<string | null>(null);
   const deckContainerRef = useRef<HTMLDivElement>(null);
   const DeckGLAny: any = DeckGL;
 
@@ -126,6 +135,22 @@ function MapView() {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // Recompute SVG mask corners whenever viewState changes
+  useEffect(() => {
+    const el = deckContainerRef.current;
+    if (!el) return;
+    const { width, height } = el.getBoundingClientRect();
+    if (!width || !height) return;
+    try {
+      const vp = new WebMercatorViewport({ width, height, ...viewState });
+      const pts = MASK_CORNERS.map(([lon, lat]) => {
+        const [x, y] = vp.project([lon, lat]);
+        return `${x},${y}`;
+      });
+      setMaskPoints(pts.join(' '));
+    } catch {}
+  }, [viewState]);
 
   useEffect(() => {
     if (state.currentStep > 0) {
@@ -363,6 +388,20 @@ function MapView() {
           }}
         />
       </div>
+
+      {/* Black mask outside the 4 keystone corners */}
+      {maskPoints && (
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 5 }}>
+          <defs>
+            <mask id="deckMask">
+              <rect width="100%" height="100%" fill="white" />
+              <polygon points={maskPoints} fill="black" />
+            </mask>
+          </defs>
+          <rect width="100%" height="100%" fill="black" mask="url(#deckMask)" />
+        </svg>
+      )}
+
       <SharedControlPanel />
 
       {/* Color legend overlay */}
