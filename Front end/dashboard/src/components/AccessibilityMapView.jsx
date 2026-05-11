@@ -272,6 +272,7 @@ export default function AccessibilityMapView() {
       const hexLayer = L.geoJSON(popData, {
         style: f => {
           const pop = f.properties.population || 0;
+          if (pop === 0) return { fillOpacity: 0, stroke: false };
           return { fillColor: accColor(f.properties.accessibility), fillOpacity: 0.15 + Math.sqrt(pop / maxPop) * 0.72, color: 'rgba(0,0,0,0)', weight: 0 };
         },
         onEachFeature: (f, layer) => {
