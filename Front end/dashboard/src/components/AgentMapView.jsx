@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
+import MapMask from './MapMask';
 
 const MAP_CENTER = [42.507, 1.522];
 const MAP_ZOOM   = 15.4;
@@ -476,6 +477,7 @@ export default function AgentMapView() {
         left: 0, right: 0, background: '#0d0d0d',
         transition: 'bottom .25s ease',
       }} />
+      <MapMask mapInstance={instanceRef} />
 
       {/* Conversation overlay */}
       {activeSpeakers.length > 0 && (
