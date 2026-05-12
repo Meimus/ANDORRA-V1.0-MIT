@@ -30,7 +30,7 @@ export default function MapVisualization({
 }) {
   // visualLayer updates immediately on click so the "already on this layer?" guard is always current.
   // The prop (activeLayerProp) may lag by 400ms due to the Arduino debounce in App.jsx.
-  const [visualLayer, setVisualLayer] = useState(activeLayerProp ?? 'base');
+  const [visualLayer, setVisualLayer] = useState('base');
   const setActiveLayer = onLayerChange ?? setVisualLayer;
 
   // Sync when Arduino forces a layer change from outside

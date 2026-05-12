@@ -44,9 +44,13 @@ export function useSerial(
   // Track encoder positions so we can derive layer / agent index from absolute pos
   const enc1PosRef = useRef(0);
   const enc2PosRef = useRef(0);
-  // Suppresses the very first ENC1 message on each connect so the encoder's
-  // physical resting position doesn't override the app's 'base' default.
-  const enc1ReadyRef = useRef(false);
+  // Tracks the ENC1 position received on connect. null = not connected yet.
+  // While the encoder sits at that position (even across repeated messages), we
+  // ignore it so the Arduino's resting position never overrides the 'base' default.
+  // Once the encoder actually moves away from the initial position, we clear this
+  // guard and process all future messages normally.
+  const enc1InitPosRef = useRef(null);
+  const enc1MovedRef   = useRef(false);
 
   // ── Message dispatcher ──────────────────────────────────────────────────────
 
@@ -80,12 +84,22 @@ export function useSerial(
         if (msg.id === 1) {
           // ENC1 → cycle map layers
           enc1PosRef.current = pos;
-          if (!enc1ReadyRef.current) {
-            // First message after connect: record physical position but don't
-            // change the layer — keeps 'base' as the startup default.
-            enc1ReadyRef.current = true;
+
+          if (enc1InitPosRef.current === null) {
+            // First message on this connect: record the physical resting position.
+            // Don't dispatch a layer change — keeps 'base' as the startup default.
+            enc1InitPosRef.current = pos;
             break;
           }
+          if (!enc1MovedRef.current) {
+            if (pos === enc1InitPosRef.current) {
+              // Encoder is still at its initial position (repeated startup message).
+              break;
+            }
+            // Encoder has moved away from initial position — unlock all future messages.
+            enc1MovedRef.current = true;
+          }
+
           const idx = ((pos % MAP_LAYERS.length) + MAP_LAYERS.length) % MAP_LAYERS.length;
           onMapLayerChange?.(MAP_LAYERS[idx]);
         } else if (msg.id === 2) {
@@ -131,7 +145,8 @@ export function useSerial(
       const port = await navigator.serial.requestPort();
       await port.open({ baudRate: 115200 });
       portRef.current = port;
-      enc1ReadyRef.current = false; // reset so first position is ignored on this connect
+      enc1InitPosRef.current = null;  // reset guards on each new connection
+      enc1MovedRef.current   = false;
       setConnected(true);
       setStatus('Connected');
 

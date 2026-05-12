@@ -81,7 +81,7 @@ export default function App() {
       prevMapLayerRef.current = activeMapLayer;
       setActiveMapLayer('agents');
     } else if (activeMapLayer === 'agents') {
-      setActiveMapLayer(prevMapLayerRef.current);
+      setActiveMapLayer('base');
     }
   }, [activeMapLayer]);
 
