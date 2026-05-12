@@ -243,6 +243,7 @@ body {
 .scenario-image {
   grid-column: 1;
   grid-row: 1 / 3;
+  position: relative;
   background: var(--surf);
   border: 1px solid var(--bdr);
   border-radius: 12px;
@@ -250,7 +251,13 @@ body {
   box-shadow: var(--shadow-panel);
   min-height: 600px;
 }
-.scenario-image img, .scenario-image video { width: 100%; height: 100%; object-fit: cover; }
+.scenario-image img, .scenario-image video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
 /* ── KPI CARD ── */
 .kpi-card {

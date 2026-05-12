@@ -41,6 +41,8 @@ export default function MapVisualization({
   const [everSeen, setEverSeen] = useState(
     Object.keys(IFRAME_LAYERS).reduce((acc, id) => ({ ...acc, [id]: true }), { base: true })
   );
+  // Increment a layer's resetKey to remount its ErrorBoundary (and the map) after a crash
+  const [resetKeys, setResetKeys] = useState({});
   const timerRef = useRef(null);
   const agentsIframeRef = useRef(null);
 
@@ -68,6 +70,8 @@ export default function MapVisualization({
     if (timerRef.current) clearTimeout(timerRef.current);
     setActiveLayer(id);
     setEverSeen(prev => ({ ...prev, [id]: true }));
+    // Reset the error boundary for the target layer so a previous crash doesn't block it
+    setResetKeys(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
     timerRef.current = setTimeout(() => window.dispatchEvent(new Event('resize')), 80);
   }, [activeLayer, setActiveLayer]);
 
@@ -106,7 +110,7 @@ export default function MapVisualization({
             zIndex:        activeLayer === id ? 1 : 0,
           }}>
             {everSeen[id] && (
-              <MapErrorBoundary key={id}>
+              <MapErrorBoundary key={`${id}-${resetKeys[id] || 0}`}>
                 {id === 'base'          ? <BaseMapView /> :
                  id === 'growth'        ? <GrowthMapView overlayEnabled={overlayEnabled} selectedYear={selectedYear} /> :
                  id === 'tourism'       ? <TourismMapView /> :
