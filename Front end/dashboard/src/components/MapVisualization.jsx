@@ -5,6 +5,7 @@ import BaseMapView from './BaseMapView';
 import GrowthMapView from './GrowthMapView';
 import TourismMapView from './TourismMapView';
 import AgentMapView from './AgentMapView';
+import MapErrorBoundary from './MapErrorBoundary';
 
 const LAYERS = [
   { id: 'base',          label: 'Base' },
@@ -105,11 +106,13 @@ export default function MapVisualization({
             zIndex:        activeLayer === id ? 1 : 0,
           }}>
             {everSeen[id] && (
-              id === 'base'          ? <BaseMapView /> :
-              id === 'growth'        ? <GrowthMapView overlayEnabled={overlayEnabled} selectedYear={selectedYear} /> :
-              id === 'tourism'       ? <TourismMapView /> :
-              id === 'accessibility' ? <AccessibilityMapView /> :
-                                       <PopulationMapView />
+              <MapErrorBoundary key={id}>
+                {id === 'base'          ? <BaseMapView /> :
+                 id === 'growth'        ? <GrowthMapView overlayEnabled={overlayEnabled} selectedYear={selectedYear} /> :
+                 id === 'tourism'       ? <TourismMapView /> :
+                 id === 'accessibility' ? <AccessibilityMapView /> :
+                                          <PopulationMapView />}
+              </MapErrorBoundary>
             )}
           </div>
         ))}

@@ -76,6 +76,7 @@ export default function GrowthMapView({ overlayEnabled = {}, selectedYear = 2049
   const layersRef     = useRef({});  // scIdx → L.geoJSON layer
   const yearRef       = useRef(selectedYear);
   const overlayRef    = useRef(overlayEnabled);
+  const refreshTimer  = useRef(null);
 
   const [showConstraints, setShowConstraints] = useState(true);
 
@@ -188,37 +189,42 @@ export default function GrowthMapView({ overlayEnabled = {}, selectedYear = 2049
   // ── Refresh all scenario layers when overlay or year changes ───────────────
   const refreshLayers = useCallback((overlay, year) => {
     const map = instanceRef.current;
-    if (!map) return;
+    if (!map || !map.getContainer()) return;
 
     Object.entries(SCENARIO_FILE).forEach(([idxStr, fname]) => {
-      const idx     = Number(idxStr);
-      const enabled = !!overlay[idx];
+      const idx      = Number(idxStr);
+      const enabled  = !!overlay[idx];
       const existing = layersRef.current[idx];
 
       if (!enabled) {
-        if (existing) { map.removeLayer(existing); layersRef.current[idx] = null; }
+        try { if (existing) map.removeLayer(existing); } catch (_) {}
+        layersRef.current[idx] = null;
         return;
       }
 
       if (dataCache.current[idx]) {
-        // Data cached — rebuild layer with new year
-        if (existing) map.removeLayer(existing);
-        const newLayer = buildLayer(idx, dataCache.current[idx], year);
-        newLayer.addTo(map);
-        layersRef.current[idx] = newLayer;
+        try { if (existing) map.removeLayer(existing); } catch (_) {}
+        try {
+          const newLayer = buildLayer(idx, dataCache.current[idx], year);
+          newLayer.addTo(map);
+          layersRef.current[idx] = newLayer;
+        } catch (_) {}
       } else {
-        // Fetch once and cache
         fetch(`/growth_${fname}.geojson`)
           .then(r => r.json())
           .then(data => {
             dataCache.current[idx] = data;
-            if (!overlayRef.current[idx]) return; // disabled while loading
-            if (layersRef.current[idx]) map.removeLayer(layersRef.current[idx]);
-            const newLayer = buildLayer(idx, data, yearRef.current);
-            newLayer.addTo(map);
-            layersRef.current[idx] = newLayer;
+            const m = instanceRef.current;
+            if (!m || !m.getContainer()) return;
+            if (!overlayRef.current[idx]) return;
+            try { if (layersRef.current[idx]) m.removeLayer(layersRef.current[idx]); } catch (_) {}
+            try {
+              const newLayer = buildLayer(idx, data, yearRef.current);
+              newLayer.addTo(m);
+              layersRef.current[idx] = newLayer;
+            } catch (_) {}
           })
-          .catch(console.error);
+          .catch(() => {});
       }
     });
   }, [buildLayer]);
@@ -226,7 +232,12 @@ export default function GrowthMapView({ overlayEnabled = {}, selectedYear = 2049
   useEffect(() => {
     yearRef.current    = selectedYear;
     overlayRef.current = overlayEnabled;
-    refreshLayers(overlayEnabled, selectedYear);
+    // Debounce rapid changes (e.g. fast Arduino encoder sweeps)
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(() => {
+      refreshLayers(overlayRef.current, yearRef.current);
+    }, 80);
+    return () => clearTimeout(refreshTimer.current);
   }, [overlayEnabled, selectedYear, refreshLayers]);
 
   const enabledScenarios = OVERLAY_SCENARIOS.filter(s => s.index > 0 && overlayEnabled[s.index]);
