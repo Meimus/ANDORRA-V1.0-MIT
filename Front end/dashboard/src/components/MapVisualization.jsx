@@ -32,10 +32,17 @@ export default function MapVisualization({
   hoveredAgent    = -1,
   selectedAgent   = -1,
 }) {
-  // Internal fallback if no external state is provided (standalone usage)
-  const [internalLayer, setInternalLayer] = useState('base');
-  const activeLayer   = activeLayerProp ?? internalLayer;
-  const setActiveLayer = onLayerChange ?? setInternalLayer;
+  // Visual layer updates immediately on click; prop (from Arduino debounce) syncs when it catches up
+  const [visualLayer, setVisualLayer] = useState(activeLayerProp ?? 'base');
+  const activeLayer = visualLayer;
+  const setActiveLayer = onLayerChange ?? setVisualLayer;
+
+  // Sync when the prop changes externally (e.g. Arduino forces a layer)
+  useEffect(() => {
+    if (activeLayerProp && activeLayerProp !== visualLayer) {
+      setVisualLayer(activeLayerProp);
+    }
+  }, [activeLayerProp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pre-seed all iframe layers so they mount immediately (avoids race in projector)
   const [everSeen, setEverSeen] = useState(
@@ -66,14 +73,14 @@ export default function MapVisualization({
   }, [activeLayer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const switchLayer = useCallback((id) => {
-    if (id === activeLayer) return;
+    if (id === visualLayer) return;
     if (timerRef.current) clearTimeout(timerRef.current);
-    setActiveLayer(id);
+    setVisualLayer(id);            // immediate visual update
+    setActiveLayer(id);            // notify parent (may be debounced)
     setEverSeen(prev => ({ ...prev, [id]: true }));
-    // Reset the error boundary for the target layer so a previous crash doesn't block it
     setResetKeys(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
     timerRef.current = setTimeout(() => window.dispatchEvent(new Event('resize')), 80);
-  }, [activeLayer, setActiveLayer]);
+  }, [visualLayer, setActiveLayer]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

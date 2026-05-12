@@ -60,9 +60,11 @@ export default function KpiGrid({ activeScenario, activeTab, selectedYear, overl
         {currentScenario?.image && (
           <div className="scenario-image">
             {currentScenario.image.endsWith('.mp4') ? (
-              <video src={currentScenario.image} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <video src={currentScenario.image} autoPlay muted loop playsInline
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <img src={currentScenario.image} alt={currentScenario.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={currentScenario.image} alt={currentScenario.name}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             )}
           </div>
         )}
