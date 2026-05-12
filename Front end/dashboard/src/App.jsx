@@ -21,7 +21,8 @@ export default function App() {
   const [selectedYear,    setSelectedYear]    = useState(2024);
   const [overlayEnabled,  setOverlayEnabled]  = useState(initialOverlay);
   const [activeMapLayer,  setActiveMapLayer]  = useState('base');
-  const prevMapLayerRef = useRef('base'); // remembers the layer before agents tab
+  const prevMapLayerRef   = useRef('base'); // remembers the layer before agents tab
+  const mapLayerTimerRef  = useRef(null);   // debounce timer for map layer changes
   const [simulationOn,    setSimulationOn]    = useState(false);
   const [hoveredAgent,    setHoveredAgent]    = useState(-1);
   const [selectedAgent,   setSelectedAgent]   = useState(-1);
@@ -92,7 +93,12 @@ export default function App() {
   }, []);
 
   const handleMapLayerChange = useCallback((layerId) => {
-    setActiveMapLayer(layerId);
+    // Debounce: only switch after the controller holds the same position for 400ms.
+    // Prevents crashes when the Arduino encoder sweeps through positions quickly.
+    if (mapLayerTimerRef.current) clearTimeout(mapLayerTimerRef.current);
+    mapLayerTimerRef.current = setTimeout(() => {
+      setActiveMapLayer(layerId);
+    }, 400);
   }, []);
 
   const handleSimulationToggle = useCallback(() => {

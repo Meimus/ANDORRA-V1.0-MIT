@@ -4,7 +4,7 @@ import { buildOverlayDataForKpi } from '../utils/chartUtils';
 import KpiCard from './KpiCard';
 
 const SCENARIOS = [
-  { id: 'current', name: 'Historical', image: '/Public/Andorra1.jpg' },
+  { id: 'current', name: 'Historical', image: '/Public/HISTORICAL.jpg' },
   { id: 'overgrowth', name: 'Overgrowth', image: '/Public/overgrowth.png' },
   { id: 'degrowth', name: 'Degrowth', image: '/Public/degrowth.png' },
   { id: 'continuity', name: 'Continuity', image: '/Public/continuity.png' },
