@@ -68,7 +68,7 @@ function scenarioFill(scIdx, pop2024, pop2049, year) {
   return `rgba(${r},${g},${b},${0.30 + s * 0.60})`;
 }
 
-export default function GrowthMapView({ overlayEnabled = {}, selectedYear = 2049 }) {
+export default function GrowthMapView({ overlayEnabled = {}, selectedYear = 2049, visible = true }) {
   const mapRef        = useRef(null);
   const instanceRef   = useRef(null);
   const constraintRef = useRef(null);
@@ -239,6 +239,15 @@ export default function GrowthMapView({ overlayEnabled = {}, selectedYear = 2049
     }, 80);
     return () => clearTimeout(refreshTimer.current);
   }, [overlayEnabled, selectedYear, refreshLayers]);
+
+  // When the tab becomes visible again, force Leaflet to re-render and re-sync layers
+  useEffect(() => {
+    if (!visible) return;
+    const map = instanceRef.current;
+    if (!map) return;
+    map.invalidateSize();
+    refreshLayers(overlayRef.current, yearRef.current);
+  }, [visible, refreshLayers]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const enabledScenarios = OVERLAY_SCENARIOS.filter(s => s.index > 0 && overlayEnabled[s.index]);
 

@@ -37,14 +37,23 @@ export default function MapVisualization({
   useEffect(() => {
     if (activeLayerProp && activeLayerProp !== visualLayer) {
       setVisualLayer(activeLayerProp);
+      // Also mark as seen so the component mounts in the same render batch
+      setEverSeen(prev => ({ ...prev, [activeLayerProp]: true }));
     }
   }, [activeLayerProp]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Always dispatch a resize event when the active layer changes so Leaflet
+  // invalidates its size regardless of whether the switch came from a UI button
+  // click or an Arduino-triggered prop update.
+  useEffect(() => {
+    const t = setTimeout(() => window.dispatchEvent(new Event('resize')), 80);
+    return () => clearTimeout(t);
+  }, [visualLayer]);
 
   const [everSeen, setEverSeen] = useState(
     Object.keys(IFRAME_LAYERS).reduce((acc, id) => ({ ...acc, [id]: true }), { base: true })
   );
 
-  const timerRef = useRef(null);
   const agentsIframeRef = useRef(null);
 
   useEffect(() => {
@@ -65,11 +74,9 @@ export default function MapVisualization({
 
   const switchLayer = useCallback((id) => {
     if (id === visualLayer) return;
-    if (timerRef.current) clearTimeout(timerRef.current);
     setVisualLayer(id);
     setActiveLayer(id);
     setEverSeen(prev => ({ ...prev, [id]: true }));
-    timerRef.current = setTimeout(() => window.dispatchEvent(new Event('resize')), 80);
   }, [visualLayer, setActiveLayer]);
 
   return (
@@ -107,7 +114,7 @@ export default function MapVisualization({
           }}>
             {everSeen[id] && (
               id === 'base'          ? <BaseMapView /> :
-              id === 'growth'        ? <GrowthMapView overlayEnabled={overlayEnabled} selectedYear={selectedYear} /> :
+              id === 'growth'        ? <GrowthMapView overlayEnabled={overlayEnabled} selectedYear={selectedYear} visible={visualLayer === 'growth'} /> :
               id === 'tourism'       ? <TourismMapView /> :
               id === 'accessibility' ? <AccessibilityMapView /> :
                                        <PopulationMapView />

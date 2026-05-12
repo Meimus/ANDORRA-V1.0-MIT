@@ -44,6 +44,9 @@ export function useSerial(
   // Track encoder positions so we can derive layer / agent index from absolute pos
   const enc1PosRef = useRef(0);
   const enc2PosRef = useRef(0);
+  // Suppresses the very first ENC1 message on each connect so the encoder's
+  // physical resting position doesn't override the app's 'base' default.
+  const enc1ReadyRef = useRef(false);
 
   // ── Message dispatcher ──────────────────────────────────────────────────────
 
@@ -77,6 +80,12 @@ export function useSerial(
         if (msg.id === 1) {
           // ENC1 → cycle map layers
           enc1PosRef.current = pos;
+          if (!enc1ReadyRef.current) {
+            // First message after connect: record physical position but don't
+            // change the layer — keeps 'base' as the startup default.
+            enc1ReadyRef.current = true;
+            break;
+          }
           const idx = ((pos % MAP_LAYERS.length) + MAP_LAYERS.length) % MAP_LAYERS.length;
           onMapLayerChange?.(MAP_LAYERS[idx]);
         } else if (msg.id === 2) {
@@ -122,6 +131,7 @@ export function useSerial(
       const port = await navigator.serial.requestPort();
       await port.open({ baudRate: 115200 });
       portRef.current = port;
+      enc1ReadyRef.current = false; // reset so first position is ignored on this connect
       setConnected(true);
       setStatus('Connected');
 
