@@ -1,10 +1,9 @@
-import { useState, useRef, useCallback, useEffect, useImperativeHandle } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import AccessibilityMapView from './AccessibilityMapView';
 import PopulationMapView from './PopulationMapView';
 import BaseMapView from './BaseMapView';
 import GrowthMapView from './GrowthMapView';
 import TourismMapView from './TourismMapView';
-import AgentMapView from './AgentMapView';
 import MapErrorBoundary from './MapErrorBoundary';
 
 const LAYERS = [
@@ -20,10 +19,8 @@ const IFRAME_LAYERS = {
   agents: '/andorra/map?embed',
 };
 
-// ── Leaflet-based layers (always mounted after first visit) ───────────────────
 const LEAFLET_IDS = ['base', 'growth', 'tourism', 'accessibility', 'population'];
 
-// ── Main component ────────────────────────────────────────────────────────────
 export default function MapVisualization({
   overlayEnabled  = {},
   selectedYear    = 2049,
@@ -32,28 +29,25 @@ export default function MapVisualization({
   hoveredAgent    = -1,
   selectedAgent   = -1,
 }) {
-  // Visual layer updates immediately on click; prop (from Arduino debounce) syncs when it catches up
+  // visualLayer updates immediately on click so the "already on this layer?" guard is always current.
+  // The prop (activeLayerProp) may lag by 400ms due to the Arduino debounce in App.jsx.
   const [visualLayer, setVisualLayer] = useState(activeLayerProp ?? 'base');
-  const activeLayer = visualLayer;
   const setActiveLayer = onLayerChange ?? setVisualLayer;
 
-  // Sync when the prop changes externally (e.g. Arduino forces a layer)
+  // Sync when Arduino forces a layer change from outside
   useEffect(() => {
     if (activeLayerProp && activeLayerProp !== visualLayer) {
       setVisualLayer(activeLayerProp);
     }
   }, [activeLayerProp]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pre-seed all iframe layers so they mount immediately (avoids race in projector)
   const [everSeen, setEverSeen] = useState(
     Object.keys(IFRAME_LAYERS).reduce((acc, id) => ({ ...acc, [id]: true }), { base: true })
   );
-  // Increment a layer's resetKey to remount its ErrorBoundary (and the map) after a crash
-  const [resetKeys, setResetKeys] = useState({});
+
   const timerRef = useRef(null);
   const agentsIframeRef = useRef(null);
 
-  // Forward agent selection/hover into the agents map iframe
   useEffect(() => {
     if (selectedAgent < 0) return;
     agentsIframeRef.current?.contentWindow?.postMessage({ type: 'AGENT_SELECT', pos: selectedAgent }, '*');
@@ -64,28 +58,25 @@ export default function MapVisualization({
     agentsIframeRef.current?.contentWindow?.postMessage({ type: 'AGENT_HOVER', pos: hoveredAgent }, '*');
   }, [hoveredAgent]);
 
-  // When the external activeLayer changes (e.g. from Arduino encoder),
-  // mark it as seen so it mounts
   useEffect(() => {
-    if (activeLayer && !everSeen[activeLayer]) {
-      setEverSeen(prev => ({ ...prev, [activeLayer]: true }));
+    if (visualLayer && !everSeen[visualLayer]) {
+      setEverSeen(prev => ({ ...prev, [visualLayer]: true }));
     }
-  }, [activeLayer]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [visualLayer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const switchLayer = useCallback((id) => {
     if (id === visualLayer) return;
     if (timerRef.current) clearTimeout(timerRef.current);
-    setVisualLayer(id);            // immediate visual update
-    setActiveLayer(id);            // notify parent (may be debounced)
+    setVisualLayer(id);
+    setActiveLayer(id);
     setEverSeen(prev => ({ ...prev, [id]: true }));
-    setResetKeys(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
     timerRef.current = setTimeout(() => window.dispatchEvent(new Event('resize')), 80);
   }, [visualLayer, setActiveLayer]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
 
-      {/* Layer switcher — floats at the bottom of the map */}
+      {/* Layer switcher */}
       <div style={{
         position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',
         display: 'flex', gap: 6, flexWrap: 'wrap', zIndex: 20, pointerEvents: 'all',
@@ -95,7 +86,7 @@ export default function MapVisualization({
       }}>
         {LAYERS.map(({ id, label }) => (
           <button key={id} type="button"
-            className={`tab-button ${activeLayer === id ? 'active' : ''}`}
+            className={`tab-button ${visualLayer === id ? 'active' : ''}`}
             style={{ fontSize:'10px', padding:'7px 14px' }}
             onClick={() => switchLayer(id)}>
             {label}
@@ -103,21 +94,20 @@ export default function MapVisualization({
         ))}
       </div>
 
-      {/* Stacked map container — full viewport height */}
       <div style={{ position: 'relative', height: '100%' }}>
 
-        {/* Leaflet maps — mounted on first visit, kept alive */}
+        {/* Leaflet maps — mounted on first visit, kept alive (never remounted) */}
         {LEAFLET_IDS.map(id => (
           <div key={id} style={{
             position:      'absolute',
             inset:         0,
-            opacity:       activeLayer === id ? 1 : 0,
-            pointerEvents: activeLayer === id ? 'auto' : 'none',
+            opacity:       visualLayer === id ? 1 : 0,
+            pointerEvents: visualLayer === id ? 'auto' : 'none',
             transition:    'opacity 380ms ease',
-            zIndex:        activeLayer === id ? 1 : 0,
+            zIndex:        visualLayer === id ? 1 : 0,
           }}>
             {everSeen[id] && (
-              <MapErrorBoundary key={`${id}-${resetKeys[id] || 0}`}>
+              <MapErrorBoundary>
                 {id === 'base'          ? <BaseMapView /> :
                  id === 'growth'        ? <GrowthMapView overlayEnabled={overlayEnabled} selectedYear={selectedYear} /> :
                  id === 'tourism'       ? <TourismMapView /> :
@@ -128,15 +118,15 @@ export default function MapVisualization({
           </div>
         ))}
 
-        {/* Iframe-based layers (ABM aerial view) */}
+        {/* Iframe layers */}
         {Object.entries(IFRAME_LAYERS).map(([id, src]) => (
           <div key={id} style={{
             position:      'absolute',
             inset:         0,
-            opacity:       activeLayer === id ? 1 : 0,
-            pointerEvents: activeLayer === id ? 'auto' : 'none',
+            opacity:       visualLayer === id ? 1 : 0,
+            pointerEvents: visualLayer === id ? 'auto' : 'none',
             transition:    'opacity 380ms ease',
-            zIndex:        activeLayer === id ? 1 : 0,
+            zIndex:        visualLayer === id ? 1 : 0,
           }}>
             {everSeen[id] && (
               <iframe
